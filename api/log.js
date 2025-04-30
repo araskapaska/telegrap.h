@@ -12,8 +12,21 @@ export default async function handler(req, res) {
   let geo = {};
   try {
     // Запрашиваем географию по IP
-    const geoRes = await fetch(`https://ip-api.com/json/${realIP}?fields=country,city,lat,lon,org`);
-    geo = await geoRes.json();
+    const geoRes = await fetch(`https://ip-api.com/json/${realIP}?fields=country,city,lat,lon,org,status`);
+    const geoData = await geoRes.json();
+
+    // Проверяем, успешен ли ответ от API
+    if (geoData.status === 'fail') {
+      geo = {
+        country: "Не удалось получить данные",
+        city: "Не удалось получить данные",
+        lat: "Не удалось получить данные",
+        lon: "Не удалось получить данные",
+        org: "Не удалось получить данные"
+      };
+    } else {
+      geo = geoData;
+    }
   } catch (_) {
     geo = {
       country: "Не удалось получить данные",
