@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Мои статьи</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    code { background: #eee; padding: 4px; display: block; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>Список статей</h1>
+  <div id="list"></div>
+
+  <script>
+    const db = JSON.parse(localStorage.getItem("articles") || "[]");
+    const list = document.getElementById("list");
+    if (!db.length) {
+      list.innerHTML = "Нет созданных статей.";
+    } else {
+      list.innerHTML = db.map(article => `
+        <p>
+          <b>${article.title}</b><br>
+          <code>https://https://telegraph-jade.vercel.app/articles/${article.slug}.html</code><br>
+          <small>Создано: ${new Date(article.date).toLocaleString()}</small>
+        </p>
+      `).join("");
+    }
+  </script>
+</body>
+</html>
