@@ -8,12 +8,12 @@
     textarea, input { width: 100%; margin: 10px 0; padding: 10px; font-size: 16px; }
     button { padding: 10px 20px; font-size: 16px; }
     code { background: #eee; padding: 3px; font-family: monospace; display: block; margin-top: 4px; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <h1>ТелеГраф</h1>
 
-  <!-- Панель для создания статьи -->
   <div id="admin-panel" class="hidden">
     <h2>Создать статью</h2>
     <input id="title" placeholder="Заголовок статьи" />
@@ -25,11 +25,11 @@
     <div id="list"></div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-database.js"></script>
+  <!-- Firebase v8 SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    // Конфигурация Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBJrKrZjCIhkMOvJgpnQisuHOhj4AUcCCI",
       authDomain: "telegraph-ac33c.firebaseapp.com",
@@ -40,21 +40,17 @@
       measurementId: "G-E6DHRHTGJ4"
     };
 
-    // Инициализация Firebase
-    const firebaseApp = firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Проверка на наличие параметра 'addminn=true' в URL
     const urlParams = new URLSearchParams(window.location.search);
     const isAdmin = urlParams.has('addminn') && urlParams.get('addminn') === 'true';
 
-    // Если это админская ссылка, показываем панель для создания статьи
     if (isAdmin) {
       document.getElementById("admin-panel").classList.remove("hidden");
       loadArticles();
     }
 
-    // Функция для создания статьи
     function createArticle() {
       const title = document.getElementById("title").value.trim();
       const content = document.getElementById("content").value.trim();
@@ -71,31 +67,28 @@
         created: date.toISOString()
       };
 
-      // Сохраняем статью в Firebase
-      const articleRef = database.ref('articles/' + slug);
-      articleRef.set(article);
-
+      database.ref('articles/' + slug).set(article);
       document.getElementById("result").innerHTML = `✅ Ссылка: <code>${location.origin}/article.html?slug=${slug}</code>`;
       loadArticles();
     }
 
-    // Функция для загрузки всех статей
     function loadArticles() {
-      const articlesRef = database.ref('articles');
-      articlesRef.once('value', (snapshot) => {
-        const allArticles = snapshot.val();
+      const ref = database.ref('articles');
+      ref.once('value', snapshot => {
+        const data = snapshot.val();
         const list = document.getElementById("list");
-        if (!allArticles) {
+        if (!data) {
           list.innerHTML = "<p>Пока нет статей</p>";
           return;
         }
-        list.innerHTML = Object.values(allArticles).map(a => `
+
+        list.innerHTML = Object.values(data).map(a => `
           <p>
             <b>${a.title}</b><br>
             <code>${location.origin}/article.html?slug=${a.slug}</code>
             <small>Создано: ${new Date(a.created).toLocaleString()}</small>
           </p>
-        `).join("");
+        `).join('');
       });
     }
   </script>
