@@ -14,11 +14,10 @@
   <p id="article-content">Здесь будет текст статьи...</p>
   <p id="article-info">Информация о статье</p>
 
-  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    // Конфигурация Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBJrKrZjCIhkMOvJgpnQisuHOhj4AUcCCI",
       authDomain: "telegraph-ac33c.firebaseapp.com",
@@ -29,26 +28,22 @@
       measurementId: "G-E6DHRHTGJ4"
     };
 
-    // Инициализация Firebase
-    const firebaseApp = firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    // Получаем slug из URL
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('slug');
 
     if (slug) {
-      const articleRef = database.ref('articles/' + slug);
-      articleRef.once('value', (snapshot) => {
+      database.ref('articles/' + slug).once('value', snapshot => {
         const article = snapshot.val();
         if (article) {
           document.getElementById('article-title').textContent = article.title;
           document.getElementById('article-content').textContent = article.content;
-          document.getElementById('article-info').innerHTML = `Дата публикации: ${new Date(article.created).toLocaleString()}`;
+          document.getElementById('article-info').textContent = `Дата публикации: ${new Date(article.created).toLocaleString()}`;
         } else {
           document.getElementById('article-title').textContent = 'Статья не найдена';
           document.getElementById('article-content').textContent = '';
-          document.getElementById('article-info').textContent = '';
         }
       });
     }
