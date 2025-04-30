@@ -2,70 +2,68 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Создание статьи</title>
+  <title>Telegraph</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
+    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 20px; }
     textarea, input { width: 100%; margin: 10px 0; padding: 10px; font-size: 16px; }
     button { padding: 10px 20px; font-size: 16px; }
-    #form-wrapper { display: none; }
-    code, pre { background: #eee; padding: 4px; font-family: monospace; }
+    code { background: #eee; padding: 3px; font-family: monospace; display: block; margin-top: 4px; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <h1>Fake Telegraph</h1>
-  <div id="form-wrapper">
-    <input id="title" placeholder="Заголовок" />
+
+  <div id="admin-panel" class="hidden">
+    <h2>Создать статью</h2>
+    <input id="title" placeholder="Заголовок статьи" />
     <textarea id="content" rows="10" placeholder="Текст статьи..."></textarea>
-    <button onclick="generate()">Создать статью</button>
+    <button onclick="createArticle()">Создать</button>
     <p id="result"></p>
-    <p><a href="/admin.html">Перейти к списку статей</a></p>
+
+    <h2>Мои статьи</h2>
+    <div id="list"></div>
   </div>
 
   <script>
-    if (window.location.search.includes("addminn=true")) {
-      document.getElementById("form-wrapper").style.display = "block";
+    if (location.search.includes("addminn=true")) {
+      document.getElementById("admin-panel").classList.remove("hidden");
+      loadArticles();
     }
 
-    async function generate() {
+    function createArticle() {
       const title = document.getElementById("title").value.trim();
       const content = document.getElementById("content").value.trim();
       if (!title || !content) return alert("Заполни оба поля");
 
       const date = new Date();
-      const dateStr = `${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}-${date.getFullYear().toString().slice(2)}`;
+      const dateStr = `${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getFullYear()).slice(2)}`;
       const slug = title.replace(/\s+/g, '-').replace(/[^a-zA-Zа-яА-Я0-9-]/g, '') + '-' + dateStr;
-      const filename = `articles/${slug}.html`;
 
-      const html = `
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <title>${title}</title>
-  <style>body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }</style>
-</head>
-<body>
-  <h1>${title}</h1>
-  <p>${content.replace(/\n/g, "<br>")}</p>
-  <script src="/js/log.js"></script>
-  <script>logVisitor("${slug}");</script>
-</body>
-</html>`.trim();
+      const article = { title, content, slug, created: date.toISOString() };
 
-      // Сохраняем как файл (пользователь вручную заливает на хостинг)
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
+      const all = JSON.parse(localStorage.getItem("articles") || "[]");
+      all.push(article);
+      localStorage.setItem("articles", JSON.stringify(all));
 
-      // Также записываем в "базу" (для админки)
-      let db = JSON.parse(localStorage.getItem("articles") || "[]");
-      db.push({ title, slug, date: new Date().toISOString() });
-      localStorage.setItem("articles", JSON.stringify(db));
+      document.getElementById("result").innerHTML = `✅ Ссылка: <code>${location.origin}/article.html?slug=${slug}</code>`;
+      loadArticles();
+    }
 
-      document.getElementById("result").innerHTML = `✅ Сохрани и залей файл на сайт:<br><code>${filename}</code>`;
+    function loadArticles() {
+      const all = JSON.parse(localStorage.getItem("articles") || "[]");
+      const list = document.getElementById("list");
+      if (!all.length) {
+        list.innerHTML = "<p>Пока нет статей</p>";
+        return;
+      }
+      list.innerHTML = all.map(a => `
+        <p>
+          <b>${a.title}</b><br>
+          <code>${location.origin}/article.html?slug=${a.slug}</code>
+          <small>Создано: ${new Date(a.created).toLocaleString()}</small>
+        </p>
+      `).join("");
     }
   </script>
 </body>
