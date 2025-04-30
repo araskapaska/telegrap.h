@@ -6,14 +6,16 @@
   <style>
     body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 20px; }
     h1, p { margin-bottom: 20px; }
-    code { background: #eee; padding: 3px; font-family: monospace; display: block; margin-top: 4px; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <h1 id="article-title">Заголовок статьи</h1>
-  <p id="article-content">Здесь будет текст статьи...</p>
-  <p id="article-info">Информация о статье</p>
+  <h1 id="article-title" class="hidden"></h1>
+  <p id="article-content" class="hidden"></p>
+  <p id="article-info" class="hidden"></p>
+  <p id="error-message" style="color:red;"></p>
 
+  <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -34,16 +36,21 @@
     const urlParams = new URLSearchParams(window.location.search);
     const slug = urlParams.get('slug');
 
-    if (slug) {
+    if (!slug) {
+      document.getElementById('error-message').textContent = '❌ Ссылка некорректна (нет slug)';
+    } else {
       database.ref('articles/' + slug).once('value', snapshot => {
         const article = snapshot.val();
         if (article) {
           document.getElementById('article-title').textContent = article.title;
           document.getElementById('article-content').textContent = article.content;
           document.getElementById('article-info').textContent = `Дата публикации: ${new Date(article.created).toLocaleString()}`;
+
+          document.getElementById('article-title').classList.remove('hidden');
+          document.getElementById('article-content').classList.remove('hidden');
+          document.getElementById('article-info').classList.remove('hidden');
         } else {
-          document.getElementById('article-title').textContent = 'Статья не найдена';
-          document.getElementById('article-content').textContent = '';
+          document.getElementById('error-message').textContent = '❌ Статья не найдена.';
         }
       });
     }
