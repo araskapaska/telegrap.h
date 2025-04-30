@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Статья</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+    h1 { font-size: 28px; }
+    p { font-size: 18px; line-height: 1.6; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Загрузка...</h1>
+  <p id="content"></p>
+
+  <script src="/js/log.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const slug = params.get("slug");
+
+    const all = JSON.parse(localStorage.getItem("articles") || "[]");
+    const article = all.find(a => a.slug === slug);
+
+    if (!article) {
+      document.getElementById("title").innerText = "Статья не найдена";
+    } else {
+      document.getElementById("title").innerText = article.title;
+      document.getElementById("content").innerText = article.content;
+      logVisitor(slug); // Запускаем логгер
+    }
+  </script>
+</body>
+</html>
