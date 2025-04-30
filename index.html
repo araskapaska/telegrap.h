@@ -2,12 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Fake Article Creator</title>
+  <title>Создание статьи</title>
   <style>
     body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; }
     textarea, input { width: 100%; margin: 10px 0; padding: 10px; font-size: 16px; }
     button { padding: 10px 20px; font-size: 16px; }
     #form-wrapper { display: none; }
+    code, pre { background: #eee; padding: 4px; font-family: monospace; }
   </style>
 </head>
 <body>
@@ -17,28 +18,31 @@
     <textarea id="content" rows="10" placeholder="Текст статьи..."></textarea>
     <button onclick="generate()">Создать статью</button>
     <p id="result"></p>
+    <p><a href="/admin.html">Перейти к списку статей</a></p>
   </div>
 
   <script>
-    // Показываем форму, только если ?addminn=true
     if (window.location.search.includes("addminn=true")) {
       document.getElementById("form-wrapper").style.display = "block";
     }
 
-    function generate() {
+    async function generate() {
       const title = document.getElementById("title").value.trim();
       const content = document.getElementById("content").value.trim();
       if (!title || !content) return alert("Заполни оба поля");
 
-      const slug = title.replace(/\s+/g, '-').replace(/[^a-zA-Zа-яА-Я0-9-]/g, '') + '-' + new Date().toISOString().slice(0, 10);
-      const filename = `${slug}.html`;
+      const date = new Date();
+      const dateStr = `${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}-${date.getFullYear().toString().slice(2)}`;
+      const slug = title.replace(/\s+/g, '-').replace(/[^a-zA-Zа-яА-Я0-9-]/g, '') + '-' + dateStr;
+      const filename = `articles/${slug}.html`;
 
-      const template = `
+      const html = `
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <title>${title}</title>
+  <style>body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }</style>
 </head>
 <body>
   <h1>${title}</h1>
@@ -46,18 +50,22 @@
   <script src="/js/log.js"></script>
   <script>logVisitor("${slug}");</script>
 </body>
-</html>
-      `.trim();
+</html>`.trim();
 
-      const blob = new Blob([template], { type: 'text/html' });
+      // Сохраняем как файл (пользователь вручную заливает на хостинг)
+      const blob = new Blob([html], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
-
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
       a.click();
 
-      document.getElementById("result").innerHTML = `Сохранено: <b>${filename}</b><br>Залей этот файл в корень сайта`;
+      // Также записываем в "базу" (для админки)
+      let db = JSON.parse(localStorage.getItem("articles") || "[]");
+      db.push({ title, slug, date: new Date().toISOString() });
+      localStorage.setItem("articles", JSON.stringify(db));
+
+      document.getElementById("result").innerHTML = `✅ Сохрани и залей файл на сайт:<br><code>${filename}</code>`;
     }
   </script>
 </body>
