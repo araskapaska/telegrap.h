@@ -1,6 +1,6 @@
 async function logVisitor(slug) {
   try {
-    const res = await fetch("https://ipapi.co/json/");
+    const res = await fetch("https://ipwho.is/");
     const data = await res.json();
     const ua = navigator.userAgent;
 
@@ -8,11 +8,11 @@ async function logVisitor(slug) {
 <pre>
 Ссылка: ${slug}
 IP: ${data.ip}
-Страна: ${data.country_name}
+Страна: ${data.country}
 Город: ${data.city}
 Координаты: ${data.latitude}, ${data.longitude}
-Провайдер: ${data.org}
-Локальное время: ${data.utc_offset}
+Провайдер: ${data.connection?.isp}
+Локальное время: ${data.timezone?.current_time}
 UA: ${ua}
 </pre>
 `;
