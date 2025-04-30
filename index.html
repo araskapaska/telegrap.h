@@ -13,6 +13,7 @@
 <body>
   <h1>ТелеГраф</h1>
 
+  <!-- Панель для создания статьи, которая будет видна только админам -->
   <div id="admin-panel" class="hidden">
     <h2>Создать статью</h2>
     <input id="title" placeholder="Заголовок статьи" />
@@ -24,19 +25,21 @@
     <div id="list"></div>
   </div>
 
+  <!-- Панель для отображения всех статей -->
+  <div id="articles-list">
+    <h2>Статьи</h2>
+    <div id="list"></div>
+  </div>
+
   <script>
-    // Уникальный ID админа
-    const adminId = 2079893058;
+    // Проверка на наличие параметра 'addminn=true' в URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdmin = urlParams.has('addminn') && urlParams.get('addminn') === 'true';
 
-    // Проверяем, является ли пользователь админом (например, в cookies или localStorage)
-    const currentUserId = parseInt(localStorage.getItem('userId'), 10);
-
-    // Если пользователь админ — показываем панель
-    if (currentUserId === adminId) {
+    // Если это админская ссылка, показываем панель для создания статьи
+    if (isAdmin) {
       document.getElementById("admin-panel").classList.remove("hidden");
       loadArticles();
-    } else {
-      alert("У вас нет доступа к созданию статей.");
     }
 
     // Функция для создания статьи
@@ -46,7 +49,7 @@
       if (!title || !content) return alert("Заполни оба поля");
 
       const date = new Date();
-      const dateStr = `${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getFullYear()).slice(2)}`;
+      const dateStr = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getFullYear()).slice(2)}`;
       const slug = title.replace(/\s+/g, '-').replace(/[^a-zA-Zа-яА-Я0-9-]/g, '') + '-' + dateStr;
 
       const article = { title, content, slug, created: date.toISOString() };
