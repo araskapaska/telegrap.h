@@ -25,11 +25,21 @@
   </div>
 
   <script>
-    if (location.search.includes("addminn=true")) {
+    // Уникальный ID админа
+    const adminId = 2079893058;
+
+    // Проверяем, является ли пользователь админом (например, в cookies или localStorage)
+    const currentUserId = parseInt(localStorage.getItem('userId'), 10);
+
+    // Если пользователь админ — показываем панель
+    if (currentUserId === adminId) {
       document.getElementById("admin-panel").classList.remove("hidden");
       loadArticles();
+    } else {
+      alert("У вас нет доступа к созданию статей.");
     }
 
+    // Функция для создания статьи
     function createArticle() {
       const title = document.getElementById("title").value.trim();
       const content = document.getElementById("content").value.trim();
@@ -49,6 +59,7 @@
       loadArticles();
     }
 
+    // Функция для загрузки всех статей
     function loadArticles() {
       const all = JSON.parse(localStorage.getItem("articles") || "[]");
       const list = document.getElementById("list");
