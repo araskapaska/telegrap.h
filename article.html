@@ -2,31 +2,55 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Статья</title>
+  <title>Статья - ТелеГраф</title>
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
-    h1 { font-size: 28px; }
-    p { font-size: 18px; line-height: 1.6; white-space: pre-wrap; }
+    body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 20px; }
+    h1, p { margin-bottom: 20px; }
+    code { background: #eee; padding: 3px; font-family: monospace; display: block; margin-top: 4px; }
   </style>
 </head>
 <body>
-  <h1 id="title">Загрузка...</h1>
-  <p id="content"></p>
+  <h1 id="article-title">Заголовок статьи</h1>
+  <p id="article-content">Здесь будет текст статьи...</p>
+  <p id="article-info">Информация о статье</p>
 
-  <script src="/js/log.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-database.js"></script>
+
   <script>
-    const params = new URLSearchParams(location.search);
-    const slug = params.get("slug");
+    // Конфигурация Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBJrKrZjCIhkMOvJgpnQisuHOhj4AUcCCI",
+      authDomain: "telegraph-ac33c.firebaseapp.com",
+      projectId: "telegraph-ac33c",
+      storageBucket: "telegraph-ac33c.firebasestorage.app",
+      messagingSenderId: "113754095893",
+      appId: "1:113754095893:web:07467e009ceeffa07f691c",
+      measurementId: "G-E6DHRHTGJ4"
+    };
 
-    const all = JSON.parse(localStorage.getItem("articles") || "[]");
-    const article = all.find(a => a.slug === slug);
+    // Инициализация Firebase
+    const firebaseApp = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-    if (!article) {
-      document.getElementById("title").innerText = "Статья не найдена";
-    } else {
-      document.getElementById("title").innerText = article.title;
-      document.getElementById("content").innerText = article.content;
-      logVisitor(slug); // Запускаем логгер
+    // Получаем slug из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const slug = urlParams.get('slug');
+
+    if (slug) {
+      const articleRef = database.ref('articles/' + slug);
+      articleRef.once('value', (snapshot) => {
+        const article = snapshot.val();
+        if (article) {
+          document.getElementById('article-title').textContent = article.title;
+          document.getElementById('article-content').textContent = article.content;
+          document.getElementById('article-info').innerHTML = `Дата публикации: ${new Date(article.created).toLocaleString()}`;
+        } else {
+          document.getElementById('article-title').textContent = 'Статья не найдена';
+          document.getElementById('article-content').textContent = '';
+          document.getElementById('article-info').textContent = '';
+        }
+      });
     }
   </script>
 </body>
