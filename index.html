@@ -13,7 +13,7 @@
 <body>
   <h1>ТелеГраф</h1>
 
-  <!-- Панель для создания статьи, которая будет видна только админам -->
+  <!-- Панель для создания статьи -->
   <div id="admin-panel" class="hidden">
     <h2>Создать статью</h2>
     <input id="title" placeholder="Заголовок статьи" />
@@ -25,13 +25,25 @@
     <div id="list"></div>
   </div>
 
-  <!-- Панель для отображения всех статей -->
-  <div id="articles-list">
-    <h2>Статьи</h2>
-    <div id="list"></div>
-  </div>
+  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-database.js"></script>
 
   <script>
+    // Конфигурация Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBJrKrZjCIhkMOvJgpnQisuHOhj4AUcCCI",
+      authDomain: "telegraph-ac33c.firebaseapp.com",
+      projectId: "telegraph-ac33c",
+      storageBucket: "telegraph-ac33c.firebasestorage.app",
+      messagingSenderId: "113754095893",
+      appId: "1:113754095893:web:07467e009ceeffa07f691c",
+      measurementId: "G-E6DHRHTGJ4"
+    };
+
+    // Инициализация Firebase
+    const firebaseApp = firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     // Проверка на наличие параметра 'addminn=true' в URL
     const urlParams = new URLSearchParams(window.location.search);
     const isAdmin = urlParams.has('addminn') && urlParams.get('addminn') === 'true';
@@ -52,11 +64,16 @@
       const dateStr = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getFullYear()).slice(2)}`;
       const slug = title.replace(/\s+/g, '-').replace(/[^a-zA-Zа-яА-Я0-9-]/g, '') + '-' + dateStr;
 
-      const article = { title, content, slug, created: date.toISOString() };
+      const article = {
+        title,
+        content,
+        slug,
+        created: date.toISOString()
+      };
 
-      const all = JSON.parse(localStorage.getItem("articles") || "[]");
-      all.push(article);
-      localStorage.setItem("articles", JSON.stringify(all));
+      // Сохраняем статью в Firebase
+      const articleRef = database.ref('articles/' + slug);
+      articleRef.set(article);
 
       document.getElementById("result").innerHTML = `✅ Ссылка: <code>${location.origin}/article.html?slug=${slug}</code>`;
       loadArticles();
@@ -64,19 +81,22 @@
 
     // Функция для загрузки всех статей
     function loadArticles() {
-      const all = JSON.parse(localStorage.getItem("articles") || "[]");
-      const list = document.getElementById("list");
-      if (!all.length) {
-        list.innerHTML = "<p>Пока нет статей</p>";
-        return;
-      }
-      list.innerHTML = all.map(a => `
-        <p>
-          <b>${a.title}</b><br>
-          <code>${location.origin}/article.html?slug=${a.slug}</code>
-          <small>Создано: ${new Date(a.created).toLocaleString()}</small>
-        </p>
-      `).join("");
+      const articlesRef = database.ref('articles');
+      articlesRef.once('value', (snapshot) => {
+        const allArticles = snapshot.val();
+        const list = document.getElementById("list");
+        if (!allArticles) {
+          list.innerHTML = "<p>Пока нет статей</p>";
+          return;
+        }
+        list.innerHTML = Object.values(allArticles).map(a => `
+          <p>
+            <b>${a.title}</b><br>
+            <code>${location.origin}/article.html?slug=${a.slug}</code>
+            <small>Создано: ${new Date(a.created).toLocaleString()}</small>
+          </p>
+        `).join("");
+      });
     }
   </script>
 </body>
