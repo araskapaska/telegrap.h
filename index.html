@@ -2,30 +2,35 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>ТелеГраф</title>
+  <title>Статья - ТелеГраф</title>
   <style>
     body { font-family: sans-serif; max-width: 700px; margin: auto; padding: 20px; }
-    textarea, input { width: 100%; margin: 10px 0; padding: 10px; font-size: 16px; }
-    button { padding: 10px 20px; font-size: 16px; }
-    code { background: #eee; padding: 3px; font-family: monospace; display: block; margin-top: 4px; }
+    h1, p { margin-bottom: 20px; }
     .hidden { display: none; }
+    textarea, input { width: 100%; padding: 10px; margin: 10px 0; font-family: monospace; }
+    button { padding: 10px 15px; cursor: pointer; }
+    hr { margin: 30px 0; }
   </style>
 </head>
 <body>
-  <h1>ТелеГраф</h1>
-
-  <div id="admin-panel" class="hidden">
-    <h2>Создать статью</h2>
-    <input id="title" placeholder="Заголовок статьи" />
-    <textarea id="content" rows="10" placeholder="Текст статьи..."></textarea>
+  <div id="admin-section" class="hidden">
+    <h2>Создание статьи</h2>
+    <input type="text" id="title" placeholder="Заголовок статьи">
+    <textarea id="content" placeholder="Текст статьи" rows="6"></textarea>
     <button onclick="createArticle()">Создать</button>
-    <p id="result"></p>
 
-    <h2>Мои статьи</h2>
-    <div id="list"></div>
+    <hr>
+
+    <h3>Мои статьи:</h3>
+    <ul id="article-list"></ul>
   </div>
 
-  <!-- Firebase v8 SDK -->
+  <h1 id="article-title" class="hidden"></h1>
+  <p id="article-content" class="hidden"></p>
+  <p id="article-info" class="hidden"></p>
+  <p id="error-message" style="color:red;"></p>
+
+  <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -37,58 +42,87 @@
       storageBucket: "telegraph-ac33c.firebasestorage.app",
       messagingSenderId: "113754095893",
       appId: "1:113754095893:web:07467e009ceeffa07f691c",
-      measurementId: "G-E6DHRHTGJ4"
+      measurementId: "G-E6DHRHTGJ4",
+      databaseURL: "https://telegraph-ac33c-default-rtdb.firebaseio.com"
     };
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
     const urlParams = new URLSearchParams(window.location.search);
-    const isAdmin = urlParams.has('addminn') && urlParams.get('addminn') === 'true';
+    const slug = urlParams.get('slug');
+    const isAdmin = urlParams.get('addminn') === 'true';
 
     if (isAdmin) {
-      document.getElementById("admin-panel").classList.remove("hidden");
+      document.getElementById('admin-section').classList.remove('hidden');
       loadArticles();
+    }
+
+    if (slug) {
+      database.ref('articles/' + slug).once('value', snapshot => {
+        const article = snapshot.val();
+        if (article) {
+          document.getElementById('article-title').textContent = article.title;
+          document.getElementById('article-content').textContent = article.content;
+          document.getElementById('article-info').textContent = `Дата публикации: ${new Date(article.created).toLocaleString()}`;
+
+          document.getElementById('article-title').classList.remove('hidden');
+          document.getElementById('article-content').classList.remove('hidden');
+          document.getElementById('article-info').classList.remove('hidden');
+
+          // лог в Telegram
+          fetch(`/api/log?slug=${encodeURIComponent(slug)}`);
+        } else {
+          document.getElementById('error-message').textContent = '❌ Статья не найдена.';
+        }
+      }, error => {
+        console.error('Ошибка при получении статьи:', error);
+        document.getElementById('error-message').textContent = '❌ Ошибка при подключении к базе данных.';
+      });
+    }
+
+    function slugify(text) {
+      return text.toString().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '').toLowerCase();
     }
 
     function createArticle() {
-      const title = document.getElementById("title").value.trim();
-      const content = document.getElementById("content").value.trim();
-      if (!title || !content) return alert("Заполни оба поля");
+      const title = document.getElementById('title').value.trim();
+      const content = document.getElementById('content').value.trim();
+      if (!title || !content) return alert('Заполните все поля');
 
-      const date = new Date();
-      const dateStr = `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}-${String(date.getFullYear()).slice(2)}`;
-      const slug = title.replace(/\s+/g, '-').replace(/[^a-zA-Zа-яА-Я0-9-]/g, '') + '-' + dateStr;
+      const now = new Date();
+      const slug = slugify(`${title}-${now.getMonth()+1}-${now.getDate()}-${now.getFullYear().toString().slice(-2)}`);
 
-      const article = {
+      const articleData = {
         title,
         content,
         slug,
-        created: date.toISOString()
+        created: now.toISOString()
       };
 
-      database.ref('articles/' + slug).set(article);
-      document.getElementById("result").innerHTML = `✅ Ссылка: <code>${location.origin}/article.html?slug=${slug}</code>`;
-      loadArticles();
+      database.ref('articles/' + slug).set(articleData).then(() => {
+        alert('✅ Статья создана! Ссылка: ?slug=' + slug);
+        loadArticles();
+      }).catch(err => {
+        alert('❌ Ошибка при создании статьи');
+        console.error(err);
+      });
     }
 
     function loadArticles() {
-      const ref = database.ref('articles');
-      ref.once('value', snapshot => {
-        const data = snapshot.val();
-        const list = document.getElementById("list");
-        if (!data) {
-          list.innerHTML = "<p>Пока нет статей</p>";
+      const list = document.getElementById('article-list');
+      list.innerHTML = '';
+      database.ref('articles').once('value', snapshot => {
+        const articles = snapshot.val();
+        if (!articles) {
+          list.innerHTML = '<li>Нет статей</li>';
           return;
         }
-
-        list.innerHTML = Object.values(data).map(a => `
-          <p>
-            <b>${a.title}</b><br>
-            <code>${location.origin}/article.html?slug=${a.slug}</code>
-            <small>Создано: ${new Date(a.created).toLocaleString()}</small>
-          </p>
-        `).join('');
+        Object.values(articles).reverse().forEach(article => {
+          const li = document.createElement('li');
+          li.innerHTML = `<a href="?slug=${article.slug}" target="_blank">${article.title}</a>`;
+          list.appendChild(li);
+        });
       });
     }
   </script>
